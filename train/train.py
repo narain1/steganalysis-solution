@@ -24,6 +24,10 @@ early_stopping_cb = EarlyStopping('score',
 checkpoint_callback = ModelCheckPoint(filepath = 'models',
         monitor = 'score'
         mode = 'max')
+
+
+def get_dl(train_df, val_df):
+    train_ds, val_ds = ImageDataset(train_df, train_aug,
 for model_name in model_names:
     for bi, (train_ids, val_ids) in enumerate(kfs.split(df, df['class'])):
         train_df, val_df = df.iloc[train_ids, :], df.iloc[val_ids, :]
