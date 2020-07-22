@@ -25,6 +25,7 @@ class Eff_b0(pl.LightningModule):
         self.emb = nn.Embedding(3, 5)
         self.lin = nn.Sequential(nn.Linear(2*nc, 512), Mish(),
                 nn.BatchNorm1d(512), nn.Dropout(0.5), nn.Linear(512, 4))
+        self.loss_fn = nn.BCEWithLogitsLoss()
 
     def forward(self, x_img, x_meta):
         x1 = self.enc(x_img)
@@ -34,13 +35,13 @@ class Eff_b0(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x_img, x_meta, yb = batch
         y_hat = self(x_img = x_img, x_meta = x_meta)
-        loss = loss_fn(y_hat, yb)
+        loss = self.loss_fn(y_hat, yb)
         return {'loss': loss}
 
     def validation_step(self, batch, batch_idx):
         x_img, x_meta, yb = batch
         y_hat = self(x_img = x_img, x_meta = x_meta)
-        loss = loss_fn(y_hat, yb)
+        loss = self.loss_fn(y_hat, yb)
         return {'valid_loss': loss, 'yb': yb, 'predictions': y_hat}
 
     def validation_epoch_end(self, outputs):
@@ -52,16 +53,9 @@ class Eff_b0(pl.LightningModule):
 
     def configure_optimizer(self):
         opt = optim.Adam(self.parameters(), lr=0.0001)
-        scheduler = opt.lr_scheduler.OneCycleLR(opt, max_lr= 1e-4, epochs= 5, steps_per_epoch=self.len_train)
+        scheduler = opt.lr_scheduler.ReduceLROnPlateau(opt, mode = 'max',factor=0.5, patience=3,)
         return [opt], [{'scheduler': scheduler, 'interval': 'step'}]
 
-    def train_dataloader(self):
-        train_dl = DataLoader(train_ds, pin_memory=True, shuffle=True, batch_size=32, num_workers=4)
-        self.len_train = len(train_dl)
-        return train_dl
-
-    def val_dataloader(self):
-        return DataLoader(valid_ds, pin_memory=True, batch_size=32, num_workers = 4)
 
 
 # callbacks
