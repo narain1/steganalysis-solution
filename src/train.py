@@ -40,7 +40,7 @@ def train_cv():
             train_ds, val_ds = ImageDataset(train_df, train_aug), ImageDataset(val_df, val_aug)
             train_dl = DataLoader(train_ds, pin_memory=True, shuffle=True, batch_size=32, num_workers=4)
             val_dl = DataLoader(val_ds, pin_memory=True, batch_size=32, num_workers=4)
-            model = Model(model_name)
+            model = EffModel(model_name)
             trainer = Trainer(gpus=1,
                     checkpoint_callback = 1.0,
                     early_stop_callback = early_stopping_cb,
