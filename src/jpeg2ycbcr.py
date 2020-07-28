@@ -3,32 +3,6 @@ import jpegio as jpio
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-def JPEGdecompressYCbCr(jpegStruct):
-    nb_colors = jpegStruct.coef_arrays.shape[0]
-    [col, row] = np.meshgrid(range(8), range(8))
-    T = 0.5 * np.cos(np.pi * (2*col + 1) * row / (2 * 8))
-    T[0, :] = T[0, :] / np.sqrt(2)
-
-    sz = np.array(jpegStruct.coef_arrays[0].shape)
-    imDecompressYCbCr = np.zeros([sz[0], sz[1], nb_colors])
-    szDct = (sz/8).astype('int')
-
-    for ColorChannel in range(nb_colors):
-        tmpPixels = np.zeros(sz)
-        DCTcoefs = jpegStruct.coef_arrays[ColorChannel]
-        if ColorChannel == 0:
-            QM = jpegStruct.quant_tables[ColorChannel]
-        else:
-            QM = jpegStruct.quant_table[1]
-
-        for idxRow in range(szDct[0]):
-            for idxCol in range(szDct[1]):
-                D = DCTcoeffs[idxRow*8: (idxRow+1)*8, idxCol*8: (idxCol+1)*8]
-                tmpPixels[idxRow*8: (idxRow+1)*8, idxCol*8:(idxCol+1)*8] = np.dot(np.transpose(T), np.dot(QM*D, T))
-        imDecompressYCbCr[:, :, ColorChannel] = tmpPixels
-    return ImDecompressYCbCr
-
-
 def decompress_YCbCr(p):
     o = jio.read(p)
     col, row = np.meshgrid(range(8), range(8))
