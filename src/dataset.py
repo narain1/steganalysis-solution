@@ -49,6 +49,23 @@ class ImageOpen:
     def __call__(self, x):
         return self.f(x)
 
+def get_strides(image, strides=8, window= 8):
+    im_h, im_w = image.shape
+
+    out_shape = (1 + (im_h - window)//stride, 1 + (im_w - window)//stride, window, window)
+    out_strides = (image.strides[0]*stride, image.strides[1] * stride, image.strides[0], image.strides[1])
+    windows = np.lib.stride_tricks.as_strided(image, shape= out_shape, strides=out_strides, writeable=False)
+    return windows
+
+def proc_dct(f):
+    img = jpegio.read(f)
+    acc = [] # lets accumlate matrices per channel
+    for channel in img.coef_arrays:
+        out = get_strides(channel, 8)
+        out = np.transpose(out, (2, 3, 0, 1)).reshape(-1, 64, 64)
+        acc.append(out)
+    return np.concatenate(acc, axis=0)
+
 proc_1 = ImageOpen(cv2.imread(), cv2.COLOR_BGR2RGB)
 
 proc_2 = ImageOpen(decompress_YCbCr)
@@ -68,3 +85,19 @@ class ImageDataset(Dataset):
 
     def __len__(self):
         return len(self.image_path)
+
+# process DCT
+class DctDataset(Dataset):
+    def __init__(self, df, tfms, f_open= proc_dct):
+        self.image_path = df['path']
+        self.ys = df['target'].astype(np.float32).values
+        self.qf = df['qf'].values
+        self.f_open = f_open
+
+    def __getitem__(self, idx):
+        img = self.f_open(self.image_path[idx])
+        return img, self.qf[idx], self.ys[idx]
+
+    def __len__(self):
+        return len(self.image_path)
+
